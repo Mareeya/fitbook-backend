@@ -1,6 +1,6 @@
 @FitBook_App_HostAddress = http://localhost:5226
 
-GET {{FitBook_App_HostAddress}}/weatherforecast/
+GET {{FitBook_App_HostAddress}}/api/classes
 Accept: application/json
 
 ###
