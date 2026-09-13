@@ -1,6 +1,8 @@
 using FitBook_App.Data;
 using FitBook_App.Domain;
 using FitBook_App.Domain.Enums;
+using FitBook_App.Repositories;
+using FitBook_App.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -20,6 +22,8 @@ builder.Services.AddCors(options =>
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("AppDb")));
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+builder.Services.AddScoped<ITrainerRepository, TrainerRepository>();
+builder.Services.AddScoped<ITrainerService, TrainerService>();
 
 var app = builder.Build();
 

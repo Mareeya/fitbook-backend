@@ -1,8 +1,6 @@
-using FitBook_App.Data;
-using FitBook_App.Domain;
 using FitBook_App.Models;
+using FitBook_App.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace FitBook_App.Controllers
 {
@@ -10,11 +8,11 @@ namespace FitBook_App.Controllers
     [ApiController]
     public class TrainersController : ControllerBase
     {
-        private readonly AppDbContext _appDbContext;
+        private readonly ITrainerService _trainerService;
 
-        public TrainersController(AppDbContext appDbContext)
+        public TrainersController(ITrainerService trainerService)
         {
-            this._appDbContext = appDbContext;
+            _trainerService = trainerService;
         }
 
         [HttpGet]
@@ -22,15 +20,7 @@ namespace FitBook_App.Controllers
         {
             try
             {
-                var trainers = await this._appDbContext.Trainers.ToListAsync();
-
-                var result = new List<TrainerResponse>();
-                foreach (var trainer in trainers)
-                {
-                    result.Add(ToTrainerResponse(trainer));
-                }
-
-                return Ok(result);
+                return Ok(await _trainerService.GetAllAsync());
             }
             catch (Exception)
             {
@@ -43,13 +33,13 @@ namespace FitBook_App.Controllers
         {
             try
             {
-                var trainer = await this._appDbContext.Trainers.FindAsync(id);
+                var trainer = await _trainerService.GetByIdAsync(id);
                 if (trainer == null)
                 {
                     return NotFound();
                 }
 
-                return Ok(ToTrainerResponse(trainer));
+                return Ok(trainer);
             }
             catch (Exception)
             {
@@ -60,7 +50,7 @@ namespace FitBook_App.Controllers
         [HttpGet("{name}")]
         public async Task<IActionResult> GetTrainerByNameAsync([FromRoute] string name)
         {
-            var result = await _appDbContext.Trainers.Where(x => x.Name == name).FirstOrDefaultAsync();
+            var result = await _trainerService.GetByNameAsync(name);
             return Ok(result);
         }
 
@@ -69,18 +59,8 @@ namespace FitBook_App.Controllers
         {
             try
             {
-                var trainer = new Trainer
-                {
-                    Name = request.Name.Trim(),
-                    Specialty = request.Specialty.Trim(),
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                };
-
-                this._appDbContext.Trainers.Add(trainer);
-                await this._appDbContext.SaveChangesAsync();
-
-                return CreatedAtAction(nameof(GetTrainerById), new { id = trainer.Id }, ToTrainerResponse(trainer));
+                var trainer = await _trainerService.CreateAsync(request);
+                return CreatedAtAction(nameof(GetTrainerById), new { id = trainer.Id }, trainer);
             }
             catch (Exception)
             {
@@ -93,18 +73,13 @@ namespace FitBook_App.Controllers
         {
             try
             {
-                var trainer = await this._appDbContext.Trainers.FindAsync(id);
+                var trainer = await _trainerService.UpdateAsync(id, request);
                 if (trainer == null)
                 {
                     return NotFound();
                 }
 
-                trainer.Name = request.Name.Trim();
-                trainer.Specialty = request.Specialty.Trim();
-                trainer.UpdatedAt = DateTime.UtcNow;
-
-                await this._appDbContext.SaveChangesAsync();
-                return Ok(ToTrainerResponse(trainer));
+                return Ok(trainer);
             }
             catch (Exception)
             {
@@ -117,36 +92,23 @@ namespace FitBook_App.Controllers
         {
             try
             {
-                var trainer = await this._appDbContext.Trainers.FindAsync(id);
-                if (trainer == null)
+                var result = await _trainerService.DeleteAsync(id);
+                if (result == "NotFound")
                 {
                     return NotFound();
                 }
 
-                this._appDbContext.Trainers.Remove(trainer);
-                await this._appDbContext.SaveChangesAsync();
+                if (result == "InUse")
+                {
+                    return Conflict("This trainer is assigned to one or more classes.");
+                }
+
                 return NoContent();
-            }
-            catch (DbUpdateException)
-            {
-                return Conflict("This trainer is assigned to one or more classes.");
             }
             catch (Exception)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred.");
             }
-        }
-
-        private TrainerResponse ToTrainerResponse(Trainer trainer)
-        {
-            return new TrainerResponse
-            {
-                Id = trainer.Id,
-                Name = trainer.Name,
-                Specialty = trainer.Specialty,
-                CreatedAt = trainer.CreatedAt,
-                UpdatedAt = trainer.UpdatedAt
-            };
         }
     }
 }
