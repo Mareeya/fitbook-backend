@@ -38,7 +38,7 @@ namespace FitBook_App.Controllers
             }
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<IActionResult> GetTrainerById(int id)
         {
             try
@@ -55,6 +55,13 @@ namespace FitBook_App.Controllers
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred.");
             }
+        }
+
+        [HttpGet("{name}")]
+        public async Task<IActionResult> GetTrainerByNameAsync([FromRoute] string name)
+        {
+            var result = await _appDbContext.Trainers.Where(x => x.Name == name).FirstOrDefaultAsync();
+            return Ok(result);
         }
 
         [HttpPost]
