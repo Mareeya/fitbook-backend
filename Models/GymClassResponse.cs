@@ -9,6 +9,8 @@ public class GymClassResponse
     public int TrainerId { get; set; }
     public string TrainerName { get; set; } = string.Empty;
     public int InitCapacity { get; set; }
+    public int SessionsThisMonth { get; set; }
+    public int AverageFillRate { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 }

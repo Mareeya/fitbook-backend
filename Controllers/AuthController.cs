@@ -1,5 +1,6 @@
 using FitBook_App.Data;
 using FitBook_App.Domain;
+using FitBook_App.Domain.Enums;
 using FitBook_App.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -11,8 +12,9 @@ namespace FitBook_App.Controllers;
 [ApiController]
 public class AuthController : ControllerBase
 {
-    private readonly AppDbContext _appDbContext;
-    private readonly IPasswordHasher<User> _passwordHasher;
+    // tools
+    private readonly AppDbContext _appDbContext; //database connection
+    private readonly IPasswordHasher<User> _passwordHasher; //password hasher
 
     public AuthController(
         AppDbContext appDbContext,
@@ -50,7 +52,56 @@ public class AuthController : ControllerBase
                 Id = user.Id,
                 Name = user.Name,
                 Email = user.Email,
-                Role = user.Role.ToString()
+                Role = (byte)user.Role
+            };
+
+            return Ok(response);
+        }
+        catch (Exception)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred.");
+        }
+    }
+
+    [HttpPost("register")]
+    public async Task<IActionResult> Register([FromBody] RegisterRequest request)
+    {
+        try
+        {
+            var name = request.Name.Trim();
+            var email = request.Email.Trim();
+            var password = request.Password.Trim();
+
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                return Conflict("Password is required.");
+            }
+
+            var emailTaken = await this._appDbContext.Users.AnyAsync(user => user.Email == email);
+            if (emailTaken)
+            {
+                return Conflict("This email is already registered.");
+            }
+
+            var user = new User
+            {
+                Name = name,
+                Email = email,
+                Role = UserRole.Member,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            user.PasswordHash = this._passwordHasher.HashPassword(user, password);
+            this._appDbContext.Users.Add(user);
+            await this._appDbContext.SaveChangesAsync();
+
+            var response = new LoginResponse
+            {
+                Id = user.Id,
+                Name = user.Name,
+                Email = user.Email,
+                Role = (byte)user.Role
             };
 
             return Ok(response);

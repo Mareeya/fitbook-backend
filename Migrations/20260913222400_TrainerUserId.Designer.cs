@@ -4,6 +4,7 @@ using FitBook_App.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FitBook_App.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260913222400_TrainerUserId")]
+    partial class TrainerUserId
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -135,7 +138,7 @@ namespace FitBook_App.Migrations
                             CreatedAt = new DateTime(2026, 9, 10, 0, 0, 0, 0, DateTimeKind.Utc),
                             Type = "class",
                             UpdatedAt = new DateTime(2026, 9, 10, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Value = "Yoga"
+                            Value = "yoga"
                         },
                         new
                         {
@@ -143,7 +146,7 @@ namespace FitBook_App.Migrations
                             CreatedAt = new DateTime(2026, 9, 10, 0, 0, 0, 0, DateTimeKind.Utc),
                             Type = "class",
                             UpdatedAt = new DateTime(2026, 9, 10, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Value = "Cardio"
+                            Value = "cardio"
                         },
                         new
                         {
@@ -151,7 +154,7 @@ namespace FitBook_App.Migrations
                             CreatedAt = new DateTime(2026, 9, 10, 0, 0, 0, 0, DateTimeKind.Utc),
                             Type = "class",
                             UpdatedAt = new DateTime(2026, 9, 10, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Value = "Strength"
+                            Value = "strength"
                         });
                 });
 

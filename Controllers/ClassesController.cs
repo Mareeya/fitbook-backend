@@ -18,160 +18,118 @@ namespace FitBook_App.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllClasses()
+        public async Task<IActionResult> GetAllClasses([FromQuery] int? trainerUserId)
         {
-            try
+            var query = this._appDbContext.Classes
+                .Include(gymClass => gymClass.Category)
+                .Include(gymClass => gymClass.Trainer)
+                .Include(gymClass => gymClass.Sessions)
+                    .ThenInclude(session => session.Bookings)
+                .AsQueryable();
+
+            if (trainerUserId.HasValue)
             {
-                var classes = await this._appDbContext.Classes
-                    .Include(gymClass => gymClass.Category)
-                    .Include(gymClass => gymClass.Trainer)
-                    .ToListAsync();
-
-                var result = new List<GymClassResponse>();
-                foreach (var gymClass in classes)
-                {
-                    result.Add(ToClassResponse(gymClass));
-                }
-
-                return Ok(result);
+                query = query.Where(gymClass => gymClass.Trainer.UserId == trainerUserId.Value);
             }
-            catch (Exception)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred.");
-            }
-        }
 
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetClassById(int id)
-        {
-            try
-            {
-                var gymClass = await this._appDbContext.Classes
-                    .Include(item => item.Category)
-                    .Include(item => item.Trainer)
-                    .FirstOrDefaultAsync(item => item.Id == id);
-
-                if (gymClass == null)
-                {
-                    return NotFound();
-                }
-
-                return Ok(ToClassResponse(gymClass));
-            }
-            catch (Exception)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred.");
-            }
+            var classes = await query.ToListAsync();
+            return Ok(classes.Select(ToClassResponse).ToList());
         }
 
         [HttpPost]
         public async Task<IActionResult> CreateClass([FromBody] GymClassRequest request)
         {
-            try
+            var name = request.Name.Trim();
+            var nameTaken = await this._appDbContext.Classes.AnyAsync(item => item.Name == name);
+            if (nameTaken)
             {
-                var category = await this._appDbContext.Lookups.FindAsync(request.CategoryId);
-                if (category == null)
-                {
-                    return BadRequest("Category does not exist.");
-                }
-
-                var trainer = await this._appDbContext.Trainers.FindAsync(request.TrainerId);
-                if (trainer == null)
-                {
-                    return BadRequest("Trainer does not exist.");
-                }
-
-                var gymClass = new GymClass
-                {
-                    Name = request.Name.Trim(),
-                    CategoryId = request.CategoryId,
-                    TrainerId = request.TrainerId,
-                    InitCapacity = request.InitCapacity,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                };
-
-                this._appDbContext.Classes.Add(gymClass);
-                await this._appDbContext.SaveChangesAsync();
-
-                gymClass.Category = category;
-                gymClass.Trainer = trainer;
-                return CreatedAtAction(nameof(GetClassById), new { id = gymClass.Id }, ToClassResponse(gymClass));
+                return Conflict("A class with this name already exists.");
             }
-            catch (Exception)
+
+            var gymClass = new GymClass
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred.");
-            }
+                Name = name,
+                CategoryId = request.CategoryId,
+                TrainerId = request.TrainerId,
+                InitCapacity = request.InitCapacity,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            this._appDbContext.Classes.Add(gymClass);
+            await this._appDbContext.SaveChangesAsync();
+
+            return Ok(await this.GetClassResponse(gymClass.Id));
         }
 
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateClass(int id, [FromBody] GymClassRequest request)
         {
-            try
+            var gymClass = await this._appDbContext.Classes.FindAsync(id);
+            if (gymClass == null)
             {
-                var gymClass = await this._appDbContext.Classes.FindAsync(id);
-                if (gymClass == null)
-                {
-                    return NotFound();
-                }
-
-                var category = await this._appDbContext.Lookups.FindAsync(request.CategoryId);
-                if (category == null)
-                {
-                    return BadRequest("Category does not exist.");
-                }
-
-                var trainer = await this._appDbContext.Trainers.FindAsync(request.TrainerId);
-                if (trainer == null)
-                {
-                    return BadRequest("Trainer does not exist.");
-                }
-
-                gymClass.Name = request.Name.Trim();
-                gymClass.CategoryId = request.CategoryId;
-                gymClass.TrainerId = request.TrainerId;
-                gymClass.InitCapacity = request.InitCapacity;
-                gymClass.UpdatedAt = DateTime.UtcNow;
-
-                await this._appDbContext.SaveChangesAsync();
-
-                gymClass.Category = category;
-                gymClass.Trainer = trainer;
-                return Ok(ToClassResponse(gymClass));
+                return NotFound();
             }
-            catch (Exception)
+
+            var name = request.Name.Trim();
+            var nameTaken = await this._appDbContext.Classes.AnyAsync(item => item.Name == name && item.Id != id);
+            if (nameTaken)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred.");
+                return Conflict("A class with this name already exists.");
             }
+
+            gymClass.Name = name;
+            gymClass.CategoryId = request.CategoryId;
+            gymClass.TrainerId = request.TrainerId;
+            gymClass.InitCapacity = request.InitCapacity;
+            gymClass.UpdatedAt = DateTime.UtcNow;
+
+            await this._appDbContext.SaveChangesAsync();
+            return Ok(await this.GetClassResponse(gymClass.Id));
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteClass(int id)
         {
-            try
+            var gymClass = await this._appDbContext.Classes.FindAsync(id);
+            if (gymClass == null)
             {
-                var gymClass = await this._appDbContext.Classes.FindAsync(id);
-                if (gymClass == null)
-                {
-                    return NotFound();
-                }
+                return NotFound();
+            }
 
-                this._appDbContext.Classes.Remove(gymClass);
-                await this._appDbContext.SaveChangesAsync();
-                return NoContent();
-            }
-            catch (DbUpdateException)
-            {
-                return Conflict("This class has sessions, so it cannot be deleted.");
-            }
-            catch (Exception)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred.");
-            }
+            this._appDbContext.Classes.Remove(gymClass);
+            await this._appDbContext.SaveChangesAsync();
+            return NoContent();
         }
 
-        private GymClassResponse ToClassResponse(GymClass gymClass)
+        private async Task<GymClassResponse> GetClassResponse(int id)
         {
+            var gymClass = await this._appDbContext.Classes
+                .Include(item => item.Category)
+                .Include(item => item.Trainer)
+                .Include(item => item.Sessions)
+                    .ThenInclude(session => session.Bookings)
+                .FirstAsync(item => item.Id == id);
+
+            return ToClassResponse(gymClass);
+        }
+
+        private static GymClassResponse ToClassResponse(GymClass gymClass)
+        {
+            var now = DateTime.UtcNow;
+            var monthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+            var monthEnd = monthStart.AddMonths(1);
+            var monthSessions = gymClass.Sessions
+                .Where(session => session.StartAt >= monthStart && session.StartAt < monthEnd)
+                .ToList();
+
+            var averageFillRate = 0;
+            if (monthSessions.Count > 0)
+            {
+                averageFillRate = (int)Math.Round(monthSessions.Average(session =>
+                    session.Capacity <= 0 ? 0 : (double)session.Bookings.Count / session.Capacity * 100));
+            }
+
             return new GymClassResponse
             {
                 Id = gymClass.Id,
@@ -181,6 +139,8 @@ namespace FitBook_App.Controllers
                 TrainerId = gymClass.TrainerId,
                 TrainerName = gymClass.Trainer.Name,
                 InitCapacity = gymClass.InitCapacity,
+                SessionsThisMonth = monthSessions.Count,
+                AverageFillRate = averageFillRate,
                 CreatedAt = gymClass.CreatedAt,
                 UpdatedAt = gymClass.UpdatedAt
             };

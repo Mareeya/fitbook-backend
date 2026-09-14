@@ -47,12 +47,18 @@ public class AppDbContext : DbContext
             entity.ToTable("Trainers");
             entity.Property(trainer => trainer.Name).HasMaxLength(120).IsRequired();
             entity.Property(trainer => trainer.Specialty).HasMaxLength(80).IsRequired();
+            entity.HasIndex(trainer => trainer.UserId).IsUnique();
+            entity.HasOne(trainer => trainer.User)
+                .WithMany()
+                .HasForeignKey(trainer => trainer.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<GymClass>(entity =>
         {
             entity.ToTable("Classes");
             entity.Property(gymClass => gymClass.Name).HasMaxLength(80).IsRequired();
+            entity.HasIndex(gymClass => gymClass.Name).IsUnique();
             entity.HasOne(gymClass => gymClass.Category)
                 .WithMany()
                 .HasForeignKey(gymClass => gymClass.CategoryId)
@@ -97,21 +103,9 @@ public class AppDbContext : DbContext
         var now = new DateTime(2026, 9, 10, 0, 0, 0, DateTimeKind.Utc);
 
         modelBuilder.Entity<Lookup>().HasData(
-            new Lookup { Id = 1, Type = "class", Value = "yoga", CreatedAt = now, UpdatedAt = now },
-            new Lookup { Id = 2, Type = "class", Value = "cardio", CreatedAt = now, UpdatedAt = now },
-            new Lookup { Id = 3, Type = "class", Value = "strength", CreatedAt = now, UpdatedAt = now }
-        );
-
-        modelBuilder.Entity<Trainer>().HasData(
-            new Trainer { Id = 1, Name = "Sara Khan", Specialty = "Yoga", CreatedAt = now, UpdatedAt = now },
-            new Trainer { Id = 2, Name = "Ali Raza", Specialty = "Cardio", CreatedAt = now, UpdatedAt = now },
-            new Trainer { Id = 3, Name = "Hina Malik", Specialty = "Strength", CreatedAt = now, UpdatedAt = now }
-        );
-
-        modelBuilder.Entity<GymClass>().HasData(
-            new GymClass { Id = 1, Name = "Morning Yoga", CategoryId = 1, TrainerId = 1, InitCapacity = 20, CreatedAt = now, UpdatedAt = now },
-            new GymClass { Id = 2, Name = "HIIT Cardio", CategoryId = 2, TrainerId = 2, InitCapacity = 15, CreatedAt = now, UpdatedAt = now },
-            new GymClass { Id = 3, Name = "Strength Basics", CategoryId = 3, TrainerId = 3, InitCapacity = 12, CreatedAt = now, UpdatedAt = now }
+            new Lookup { Id = 1, Type = "class", Value = "Yoga", CreatedAt = now, UpdatedAt = now },
+            new Lookup { Id = 2, Type = "class", Value = "Cardio", CreatedAt = now, UpdatedAt = now },
+            new Lookup { Id = 3, Type = "class", Value = "Strength", CreatedAt = now, UpdatedAt = now }
         );
     }
 

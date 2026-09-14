@@ -4,6 +4,7 @@ using FitBook_App.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FitBook_App.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260913215229_UniqueClassName")]
+    partial class UniqueClassName
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -95,6 +98,38 @@ namespace FitBook_App.Migrations
                     b.HasIndex("TrainerId");
 
                     b.ToTable("Classes", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CategoryId = 1,
+                            CreatedAt = new DateTime(2026, 9, 10, 0, 0, 0, 0, DateTimeKind.Utc),
+                            InitCapacity = 20,
+                            Name = "Morning Yoga",
+                            TrainerId = 1,
+                            UpdatedAt = new DateTime(2026, 9, 10, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 2,
+                            CategoryId = 2,
+                            CreatedAt = new DateTime(2026, 9, 10, 0, 0, 0, 0, DateTimeKind.Utc),
+                            InitCapacity = 15,
+                            Name = "HIIT Cardio",
+                            TrainerId = 2,
+                            UpdatedAt = new DateTime(2026, 9, 10, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 3,
+                            CategoryId = 3,
+                            CreatedAt = new DateTime(2026, 9, 10, 0, 0, 0, 0, DateTimeKind.Utc),
+                            InitCapacity = 12,
+                            Name = "Strength Basics",
+                            TrainerId = 3,
+                            UpdatedAt = new DateTime(2026, 9, 10, 0, 0, 0, 0, DateTimeKind.Utc)
+                        });
                 });
 
             modelBuilder.Entity("FitBook_App.Domain.Lookup", b =>
@@ -135,7 +170,7 @@ namespace FitBook_App.Migrations
                             CreatedAt = new DateTime(2026, 9, 10, 0, 0, 0, 0, DateTimeKind.Utc),
                             Type = "class",
                             UpdatedAt = new DateTime(2026, 9, 10, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Value = "Yoga"
+                            Value = "yoga"
                         },
                         new
                         {
@@ -143,7 +178,7 @@ namespace FitBook_App.Migrations
                             CreatedAt = new DateTime(2026, 9, 10, 0, 0, 0, 0, DateTimeKind.Utc),
                             Type = "class",
                             UpdatedAt = new DateTime(2026, 9, 10, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Value = "Cardio"
+                            Value = "cardio"
                         },
                         new
                         {
@@ -151,7 +186,7 @@ namespace FitBook_App.Migrations
                             CreatedAt = new DateTime(2026, 9, 10, 0, 0, 0, 0, DateTimeKind.Utc),
                             Type = "class",
                             UpdatedAt = new DateTime(2026, 9, 10, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Value = "Strength"
+                            Value = "strength"
                         });
                 });
 
@@ -214,15 +249,35 @@ namespace FitBook_App.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId")
-                        .IsUnique();
-
                     b.ToTable("Trainers", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CreatedAt = new DateTime(2026, 9, 10, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Sara Khan",
+                            Specialty = "Yoga",
+                            UpdatedAt = new DateTime(2026, 9, 10, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 2,
+                            CreatedAt = new DateTime(2026, 9, 10, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Ali Raza",
+                            Specialty = "Cardio",
+                            UpdatedAt = new DateTime(2026, 9, 10, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 3,
+                            CreatedAt = new DateTime(2026, 9, 10, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Hina Malik",
+                            Specialty = "Strength",
+                            UpdatedAt = new DateTime(2026, 9, 10, 0, 0, 0, 0, DateTimeKind.Utc)
+                        });
                 });
 
             modelBuilder.Entity("FitBook_App.Domain.User", b =>
@@ -328,17 +383,6 @@ namespace FitBook_App.Migrations
                     b.Navigation("Class");
 
                     b.Navigation("Status");
-                });
-
-            modelBuilder.Entity("FitBook_App.Domain.Trainer", b =>
-                {
-                    b.HasOne("FitBook_App.Domain.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("FitBook_App.Domain.GymClass", b =>

@@ -2,7 +2,7 @@ namespace FitBook_App.Domain.Enums;
 
 public enum UserRole : byte
 {
-    Member = 1,
-    Staff = 2,
-    Admin = 3
+    Admin = 1,
+    Trainer = 2,
+    Member = 3
 }

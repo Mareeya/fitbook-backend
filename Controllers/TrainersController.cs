@@ -47,11 +47,36 @@ namespace FitBook_App.Controllers
             }
         }
 
-        [HttpGet("{name}")]
-        public async Task<IActionResult> GetTrainerByNameAsync([FromRoute] string name)
+        [HttpGet("user/{userId:int}")]
+        public async Task<IActionResult> GetTrainerByUserId(int userId)
         {
-            var result = await _trainerService.GetByNameAsync(name);
-            return Ok(result);
+            try
+            {
+                var trainer = await _trainerService.GetByUserIdAsync(userId);
+                if (trainer == null)
+                {
+                    return NotFound();
+                }
+
+                return Ok(trainer);
+            }
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred.");
+            }
+        }
+
+        [HttpGet("{name}")]
+        public async Task<IActionResult> GetTrainerByName([FromRoute] string name)
+        {
+            try
+            {
+                return Ok(await _trainerService.GetByNameAsync(name));
+            }
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred.");
+            }
         }
 
         [HttpPost]
@@ -61,6 +86,10 @@ namespace FitBook_App.Controllers
             {
                 var trainer = await _trainerService.CreateAsync(request);
                 return CreatedAtAction(nameof(GetTrainerById), new { id = trainer.Id }, trainer);
+            }
+            catch (InvalidOperationException exception)
+            {
+                return Conflict(exception.Message);
             }
             catch (Exception)
             {
@@ -80,6 +109,10 @@ namespace FitBook_App.Controllers
                 }
 
                 return Ok(trainer);
+            }
+            catch (InvalidOperationException exception)
+            {
+                return Conflict(exception.Message);
             }
             catch (Exception)
             {

@@ -24,6 +24,10 @@
 
   <ItemGroup>
     <Folder Include="Models\" />
+    <Compile Remove="FitBook-App\**" />
+    <Content Remove="FitBook-App\**" />
+    <EmbeddedResource Remove="FitBook-App\**" />
+    <None Remove="FitBook-App\**" />
   </ItemGroup>
 
 </Project>
