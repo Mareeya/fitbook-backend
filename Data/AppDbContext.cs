@@ -1,5 +1,4 @@
-﻿using FitBook_App.Domain;
-using FitBook_App.Domain.Enums;
+using FitBook_App.Domain;
 using Microsoft.EntityFrameworkCore;
 
 namespace FitBook_App.Data;
@@ -9,19 +8,14 @@ public class AppDbContext : DbContext
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
     }
-     // Declaring tables
-    public DbSet<User> Users => Set<User>(); // {get; set;}
+
+    public DbSet<User> Users => Set<User>();
     public DbSet<Lookup> Lookups => Set<Lookup>();
     public DbSet<Trainer> Trainers => Set<Trainer>();
     public DbSet<GymClass> Classes => Set<GymClass>();
     public DbSet<Session> Sessions => Set<Session>();
     public DbSet<Booking> Bookings => Set<Booking>();
 
-    /* OnModelCreating —> This method is where you tell EF Core extra details it can't guess just from your class definitions,
-    things like "this column is required," "this combination must be unique," "here's how these two tables connect."
-    Everything inside runs once, when EF Core is figuring out how to build/read your database.*/
-
-   
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<User>(entity =>
@@ -85,7 +79,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Booking>(entity =>
         {
             entity.ToTable("Bookings");
-            entity.HasIndex(booking => new { booking.SessionId, booking.UserId }).IsUnique(); //it means one user can't book the same session twice.
+            entity.HasIndex(booking => new { booking.SessionId, booking.UserId }).IsUnique();
             entity.HasOne(booking => booking.User)
                 .WithMany(user => user.Bookings)
                 .HasForeignKey(booking => booking.UserId)
@@ -99,14 +93,5 @@ public class AppDbContext : DbContext
                 .HasForeignKey(booking => booking.StatusId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
-
-        var now = new DateTime(2026, 9, 10, 0, 0, 0, DateTimeKind.Utc);
-
-        modelBuilder.Entity<Lookup>().HasData(
-            new Lookup { Id = 1, Type = "class", Value = "Yoga", CreatedAt = now, UpdatedAt = now },
-            new Lookup { Id = 2, Type = "class", Value = "Cardio", CreatedAt = now, UpdatedAt = now },
-            new Lookup { Id = 3, Type = "class", Value = "Strength", CreatedAt = now, UpdatedAt = now }
-        );
     }
-
 }

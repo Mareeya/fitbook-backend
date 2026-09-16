@@ -1,6 +1,7 @@
 using FitBook_App.Data;
 using FitBook_App.Domain;
 using FitBook_App.Domain.Enums;
+using FitBook_App.Helpers;
 using FitBook_App.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -65,19 +66,19 @@ public class TrainerService : ITrainerService
     public async Task<TrainerResponse> CreateAsync(TrainerRequest request)
     {
         var name = request.Name.Trim();
-        var email = request.Email.Trim();
+        var email = EmailNormalizer.Normalize(request.Email);
         var password = request.Password.Trim();
         var specialty = request.Specialty.Trim();
 
         if (string.IsNullOrWhiteSpace(password))
         {
-            throw new InvalidOperationException("Password is required.");
+            throw new AppException(StatusCodes.Status400BadRequest, "Password is required.");
         }
 
         var emailTaken = await _db.Users.AnyAsync(user => user.Email == email);
         if (emailTaken)
         {
-            throw new InvalidOperationException("This email is already used.");
+            throw new AppException(StatusCodes.Status409Conflict, "This email is already used.");
         }
 
         var user = new User
@@ -90,12 +91,9 @@ public class TrainerService : ITrainerService
         };
         user.PasswordHash = _passwordHasher.HashPassword(user, password);
 
-        _db.Users.Add(user);
-        await _db.SaveChangesAsync();
-
         var trainer = new Trainer
         {
-            UserId = user.Id,
+            User = user,
             Name = name,
             Specialty = specialty,
             CreatedAt = DateTime.UtcNow,
@@ -104,7 +102,6 @@ public class TrainerService : ITrainerService
 
         _db.Trainers.Add(trainer);
         await _db.SaveChangesAsync();
-        trainer.User = user;
         return ToResponse(trainer);
     }
 
@@ -117,13 +114,13 @@ public class TrainerService : ITrainerService
         }
 
         var name = request.Name.Trim();
-        var email = request.Email.Trim();
+        var email = EmailNormalizer.Normalize(request.Email);
         var specialty = request.Specialty.Trim();
 
         var emailTaken = await _db.Users.AnyAsync(user => user.Email == email && user.Id != trainer.UserId);
         if (emailTaken)
         {
-            throw new InvalidOperationException("This email is already used.");
+            throw new AppException(StatusCodes.Status409Conflict, "This email is already used.");
         }
 
         trainer.Name = name;
@@ -151,18 +148,16 @@ public class TrainerService : ITrainerService
             return "NotFound";
         }
 
-        try
+        var inUse = await _db.Classes.AnyAsync(gymClass => gymClass.TrainerId == id);
+        if (inUse)
         {
-            var user = trainer.User;
-            _db.Trainers.Remove(trainer);
-            _db.Users.Remove(user);
-            await _db.SaveChangesAsync();
-            return "Deleted";
+            throw new AppException(StatusCodes.Status409Conflict, "This trainer is assigned to one or more classes.");
         }
-        catch (DbUpdateException)
-        {
-            return "InUse";
-        }
+
+        _db.Trainers.Remove(trainer);
+        _db.Users.Remove(trainer.User);
+        await _db.SaveChangesAsync();
+        return "Deleted";
     }
 
     private static TrainerResponse ToResponse(Trainer trainer)
