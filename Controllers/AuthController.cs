@@ -1,9 +1,11 @@
 using FitBook_App.Models;
 using FitBook_App.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FitBook_App.Controllers;
 
+[AllowAnonymous]
 [Route("api/auth")]
 [ApiController]
 public class AuthController : ControllerBase

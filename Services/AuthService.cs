@@ -1,3 +1,6 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 using FitBook_App.Data;
 using FitBook_App.Domain;
 using FitBook_App.Domain.Enums;
@@ -5,6 +8,7 @@ using FitBook_App.Helpers;
 using FitBook_App.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 namespace FitBook_App.Services;
 
@@ -18,11 +22,13 @@ public class AuthService : IAuthService
 {
     private readonly AppDbContext _db;
     private readonly IPasswordHasher<User> _passwordHasher;
+    private readonly IConfiguration _configuration;
 
-    public AuthService(AppDbContext db, IPasswordHasher<User> passwordHasher)
+    public AuthService(AppDbContext db, IPasswordHasher<User> passwordHasher, IConfiguration configuration)
     {
         _db = db;
         _passwordHasher = passwordHasher;
+        _configuration = configuration;
     }
 
     public async Task<LoginResponse?> LoginAsync(LoginRequest request)
@@ -75,14 +81,44 @@ public class AuthService : IAuthService
         return ToResponse(user);
     }
 
-    private static LoginResponse ToResponse(User user)
+    private LoginResponse ToResponse(User user)
     {
         return new LoginResponse
         {
             Id = user.Id,
             Name = user.Name,
             Email = user.Email,
-            Role = (byte)user.Role
+            Role = (byte)user.Role,
+            Token = CreateToken(user)
         };
+    }
+
+    private string CreateToken(User user)
+    {
+        var key = _configuration["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key is missing.");
+        var issuer = _configuration["Jwt:Issuer"];
+        var audience = _configuration["Jwt:Audience"];
+        var expireMinutes = int.TryParse(_configuration["Jwt:ExpireMinutes"], out var minutes) ? minutes : 480;
+
+        var claims = new[]
+        {
+            new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new Claim(ClaimTypes.Name, user.Name),
+            new Claim(ClaimTypes.Role, user.Role.ToString())
+        };
+
+        var credentials = new SigningCredentials(
+            new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
+            SecurityAlgorithms.HmacSha256);
+
+        var token = new JwtSecurityToken(
+            issuer,
+            audience,
+            claims,
+            expires: DateTime.UtcNow.AddMinutes(expireMinutes),
+            signingCredentials: credentials);
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
     }
 }

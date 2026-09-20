@@ -1,10 +1,13 @@
+using System.Text;
 using FitBook_App.Configuration;
 using FitBook_App.Data;
 using FitBook_App.Domain;
 using FitBook_App.Helpers;
 using FitBook_App.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,6 +29,36 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("AppDb")));
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        var jwt = builder.Configuration.GetSection("Jwt");
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwt["Issuer"],
+            ValidAudience = jwt["Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt["Key"]!)),
+            ClockSkew = TimeSpan.FromMinutes(1)
+        };
+        options.Events = new JwtBearerEvents
+        {
+            OnChallenge = async context =>
+            {
+                context.HandleResponse();
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                await context.Response.WriteAsync("Please log in again.");
+            },
+            OnForbidden = async context =>
+            {
+                context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                await context.Response.WriteAsync("You do not have permission to do that.");
+            }
+        };
+    });
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IBookingService, BookingService>();
@@ -51,6 +84,7 @@ else
 
 app.UseExceptionHandler();
 app.UseCors("AngularApp");
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();
