@@ -16,6 +16,7 @@ public interface IAuthService
 {
     Task<LoginResponse?> LoginAsync(LoginRequest request);
     Task<LoginResponse> RegisterAsync(RegisterRequest request);
+    Task<MeResponse?> GetMeAsync(int userId);
 }
 
 public class AuthService : IAuthService
@@ -79,6 +80,30 @@ public class AuthService : IAuthService
         _db.Users.Add(user);
         await _db.SaveChangesAsync();
         return ToResponse(user);
+    }
+
+    public async Task<MeResponse?> GetMeAsync(int userId)
+    {
+        var user = await _db.Users.FirstOrDefaultAsync(item => item.Id == userId);
+        if (user == null)
+        {
+            return null;
+        }
+
+        var trainerId = await _db.Trainers
+            .Where(trainer => trainer.UserId == userId)
+            .Select(trainer => (int?)trainer.Id)
+            .FirstOrDefaultAsync();
+
+        return new MeResponse
+        {
+            Id = user.Id,
+            Name = user.Name,
+            Email = user.Email,
+            Role = (byte)user.Role,
+            RoleName = user.Role.ToString(),
+            TrainerId = trainerId
+        };
     }
 
     private LoginResponse ToResponse(User user)

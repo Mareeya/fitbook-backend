@@ -1,0 +1,1012 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="FitBook schema roadmap: six migrations covering attendance, dashboard stats and future features, then the controllers and endpoints they imply.">
+<title>FitBook Schema Roadmap</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --ground: #eef1f0;
+    --panel: #ffffff;
+    --panel-2: #f7f9f8;
+    --ink: #14181a;
+    --ink-2: #414a4c;
+    --ink-3: #6d7779;
+    --rule: #d6dcda;
+    --rule-strong: #b9c2bf;
+    --pine: #0f6b5a;
+    --pine-soft: #dcece7;
+    --ochre: #9a6a12;
+    --ochre-soft: #f5e9cf;
+    --plum: #6d3f6b;
+    --plum-soft: #f0e2ef;
+    --rust: #9c3a24;
+    --rust-soft: #f7e2dc;
+    --heat-0: #e7ebea;
+    --heat-1: #cfe2db;
+    --heat-2: #a5cfc1;
+    --heat-3: #63b09a;
+    --heat-4: #17806a;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0e1214;
+      --panel: #171c1f;
+      --panel-2: #1d2427;
+      --ink: #e8edec;
+      --ink-2: #b2bcbb;
+      --ink-3: #828e8d;
+      --rule: #2a3336;
+      --rule-strong: #3b4649;
+      --pine: #62c2ab;
+      --pine-soft: #12322b;
+      --ochre: #d6a747;
+      --ochre-soft: #332811;
+      --plum: #c79ac4;
+      --plum-soft: #2d1f2c;
+      --rust: #e08b70;
+      --rust-soft: #38190f;
+      --heat-0: #1e2528;
+      --heat-1: #1b3c35;
+      --heat-2: #1f5c4e;
+      --heat-3: #2b8770;
+      --heat-4: #4fbfa2;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground: #0e1214;
+    --panel: #171c1f;
+    --panel-2: #1d2427;
+    --ink: #e8edec;
+    --ink-2: #b2bcbb;
+    --ink-3: #828e8d;
+    --rule: #2a3336;
+    --rule-strong: #3b4649;
+    --pine: #62c2ab;
+    --pine-soft: #12322b;
+    --ochre: #d6a747;
+    --ochre-soft: #332811;
+    --plum: #c79ac4;
+    --plum-soft: #2d1f2c;
+    --rust: #e08b70;
+    --rust-soft: #38190f;
+    --heat-0: #1e2528;
+    --heat-1: #1b3c35;
+    --heat-2: #1f5c4e;
+    --heat-3: #2b8770;
+    --heat-4: #4fbfa2;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 1020px; margin: 0 auto; padding-inline: 20px; padding-block: 36px 72px; }
+
+  h1, h2, h3, h4 { font-family: Archivo, "IBM Plex Sans", sans-serif; text-wrap: balance; margin: 0; }
+  h1 { font-size: clamp(30px, 5vw, 44px); font-weight: 700; letter-spacing: -.022em; line-height: 1.04; }
+
+  .eyebrow {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 11.5px; font-weight: 500; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--pine); margin-bottom: 12px;
+  }
+
+  .lede { color: var(--ink-2); max-width: 64ch; margin: 14px 0 0; }
+  .audience { font-size: 12.5px; color: var(--ink-3); margin: 10px 0 0; font-style: italic; }
+
+  section { margin-top: 44px; }
+
+  h2 {
+    font-size: 13px; font-weight: 700; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--ink-3);
+    padding-bottom: 10px; border-bottom: 1px solid var(--rule); margin-bottom: 20px;
+  }
+
+  .sub { color: var(--ink-2); max-width: 66ch; margin: -6px 0 20px; font-size: 14.5px; }
+
+  code.i {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: .9em; background: var(--panel); border: 1px solid var(--rule);
+    border-radius: 2px; padding: 0 4px; color: var(--ink); white-space: nowrap;
+  }
+
+  /* --- observations --- */
+  .facts { display: grid; gap: 10px; }
+  .fact {
+    display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: start;
+    background: var(--panel); border: 1px solid var(--rule);
+    border-left: 3px solid var(--rust); border-radius: 0 4px 4px 0; padding: 13px 16px;
+  }
+  .fact .tag {
+    font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 10px; font-weight: 600;
+    letter-spacing: .08em; background: var(--rust-soft); color: var(--rust);
+    border-radius: 2px; padding: 2px 6px; margin-top: 3px; white-space: nowrap;
+  }
+  .fact p { margin: 0; font-size: 14px; color: var(--ink-2); }
+  .fact b { color: var(--ink); font-weight: 600; }
+
+  /* --- migrations --- */
+  .mig {
+    display: grid; grid-template-columns: 62px 1fr; gap: 18px;
+    padding: 22px 0; border-top: 1px solid var(--rule);
+  }
+  .mig:last-of-type { border-bottom: 1px solid var(--rule); }
+  .mig .idx {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 11.5px; font-weight: 600; color: var(--pine);
+    padding-top: 5px; letter-spacing: .04em;
+  }
+  .mig h3 { font-size: 19px; font-weight: 600; letter-spacing: -.012em; }
+  .mig .why { color: var(--ink-2); margin: 7px 0 0; font-size: 14.5px; max-width: 62ch; }
+  .mig ul { margin: 12px 0 0; padding-left: 18px; color: var(--ink-2); font-size: 14px; }
+  .mig li { margin: 5px 0; }
+  .mig li b { color: var(--ink); font-weight: 600; }
+
+  .gate {
+    display: inline-block; font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+    border-radius: 2px; padding: 2px 6px; margin-left: 9px; vertical-align: 3px;
+  }
+  .g-now { background: var(--pine-soft); color: var(--pine); }
+  .g-soon { background: var(--ochre-soft); color: var(--ochre); }
+  .g-later { background: var(--plum-soft); color: var(--plum); }
+
+  /* --- ddl block --- */
+  .ddl {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 12.5px; line-height: 1.75;
+    background: var(--panel-2); border: 1px solid var(--rule);
+    border-radius: 4px; padding: 12px 14px; margin-top: 12px;
+    overflow-x: auto; white-space: pre; color: var(--ink-2);
+  }
+  .ddl .tn { color: var(--pine); font-weight: 600; }
+  .ddl .plus { color: var(--ochre); }
+  .ddl .cm { color: var(--ink-3); }
+
+  /* --- delta table --- */
+  .delta {
+    background: var(--panel); border: 1px solid var(--rule); border-radius: 4px;
+    overflow-x: auto; margin-top: 4px;
+  }
+  .delta table { border-collapse: collapse; width: 100%; min-width: 560px; }
+  .delta th {
+    text-align: left; font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 10.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--ink-3); background: var(--panel-2);
+    padding: 9px 14px; border-bottom: 1px solid var(--rule);
+  }
+  .delta td {
+    padding: 9px 14px; font-size: 13px; color: var(--ink-2);
+    border-bottom: 1px solid var(--rule); vertical-align: top;
+  }
+  .delta tr:last-child td { border-bottom: 0; }
+  .delta td.mono {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 12.5px; color: var(--ink); white-space: nowrap;
+  }
+  .delta td.mono small { color: var(--ink-3); font-weight: 400; }
+
+  /* --- diagram --- */
+  .diagram {
+    background: #fbfcfc; border: 1px solid var(--rule-strong);
+    border-radius: 4px; padding: 18px 12px; overflow-x: auto;
+  }
+  .diagram pre.mermaid { margin: 0; background: transparent; min-width: 640px; text-align: center; }
+  .caption { font-size: 12.5px; color: var(--ink-3); margin-top: 10px; }
+
+  /* --- dashboard mock --- */
+  .mock {
+    background: var(--panel); border: 1px solid var(--rule-strong);
+    border-radius: 5px; padding: 16px; margin-top: 6px;
+  }
+  .mock-bar {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding-bottom: 12px; margin-bottom: 14px; border-bottom: 1px solid var(--rule);
+  }
+  .mock-bar strong { font-family: Archivo, sans-serif; font-size: 15px; font-weight: 600; }
+  .mock-bar span {
+    font-family: "IBM Plex Mono", monospace; font-size: 10.5px;
+    color: var(--ink-3); letter-spacing: .06em; text-transform: uppercase;
+  }
+
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(148px, 1fr)); gap: 10px; }
+  .tile { background: var(--panel-2); border: 1px solid var(--rule); border-radius: 4px; padding: 11px 13px; }
+  .tile .k {
+    font-family: "IBM Plex Mono", monospace; font-size: 10px; letter-spacing: .07em;
+    text-transform: uppercase; color: var(--ink-3);
+  }
+  .tile .v {
+    font-family: Archivo, sans-serif; font-size: 26px; font-weight: 700;
+    letter-spacing: -.02em; margin-top: 4px; font-variant-numeric: tabular-nums;
+  }
+  .tile .d { font-size: 11.5px; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .tile .src {
+    font-family: "IBM Plex Mono", monospace; font-size: 9.5px; color: var(--ink-3);
+    margin-top: 7px; padding-top: 6px; border-top: 1px dotted var(--rule); white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
+  }
+  .up { color: var(--pine); }
+  .down { color: var(--rust); }
+  .flat { color: var(--ink-3); }
+
+  .mock-split { display: grid; grid-template-columns: 1.25fr 1fr; gap: 12px; margin-top: 12px; }
+  @media (max-width: 640px) { .mock-split { grid-template-columns: 1fr; } }
+
+  .board { background: var(--panel-2); border: 1px solid var(--rule); border-radius: 4px; padding: 12px 13px; }
+  .board h4 {
+    font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--ink-3); margin-bottom: 10px;
+  }
+
+  .roster { display: grid; gap: 1px; }
+  .rrow {
+    display: grid; grid-template-columns: 46px 1fr auto auto; gap: 9px; align-items: center;
+    padding: 6px 0; border-top: 1px dotted var(--rule);
+    font-size: 12.5px; font-variant-numeric: tabular-nums;
+  }
+  .rrow:first-child { border-top: 0; }
+  .rrow .t { font-family: "IBM Plex Mono", monospace; font-size: 11.5px; color: var(--ink-3); }
+  .rrow .c { color: var(--ink); }
+  .rrow .f { font-family: "IBM Plex Mono", monospace; font-size: 11.5px; color: var(--ink-2); }
+  .pill {
+    font-family: "IBM Plex Mono", monospace; font-size: 9.5px; font-weight: 600;
+    letter-spacing: .05em; border-radius: 2px; padding: 2px 5px; white-space: nowrap;
+  }
+  .p-ok { background: var(--pine-soft); color: var(--pine); }
+  .p-warn { background: var(--ochre-soft); color: var(--ochre); }
+  .p-bad { background: var(--rust-soft); color: var(--rust); }
+  .p-idle { background: var(--heat-0); color: var(--ink-3); }
+
+  .heat { display: grid; grid-template-columns: 30px repeat(7, 1fr); gap: 3px; }
+  .heat .hl {
+    font-family: "IBM Plex Mono", monospace; font-size: 9px; color: var(--ink-3);
+    display: flex; align-items: center; justify-content: flex-end; padding-right: 3px;
+  }
+  .heat .hh {
+    font-family: "IBM Plex Mono", monospace; font-size: 9px; color: var(--ink-3);
+    text-align: center; padding-bottom: 2px;
+  }
+  .heat .cell { aspect-ratio: 1; border-radius: 2px; background: var(--heat-0); }
+  .h1 { background: var(--heat-1) !important; }
+  .h2 { background: var(--heat-2) !important; }
+  .h3 { background: var(--heat-3) !important; }
+  .h4 { background: var(--heat-4) !important; }
+  .heat-key {
+    display: flex; align-items: center; gap: 5px; margin-top: 9px;
+    font-family: "IBM Plex Mono", monospace; font-size: 9.5px; color: var(--ink-3);
+  }
+  .heat-key i { width: 13px; height: 9px; border-radius: 1px; display: block; }
+
+  .mock-note { font-size: 12px; color: var(--ink-3); margin-top: 10px; }
+
+  /* --- metric → schema --- */
+  .metrics { display: grid; gap: 0; margin-top: 4px; }
+  .metric {
+    display: grid; grid-template-columns: 190px 1fr; gap: 18px;
+    padding: 13px 0; border-top: 1px solid var(--rule);
+  }
+  .metric:last-child { border-bottom: 1px solid var(--rule); }
+  .metric .name {
+    font-family: "IBM Plex Mono", monospace; font-size: 12.5px;
+    font-weight: 500; color: var(--ink);
+  }
+  .metric .name em {
+    display: block; font-family: "IBM Plex Sans", sans-serif; font-style: normal;
+    font-size: 11px; color: var(--ink-3); margin-top: 3px;
+  }
+  .metric p { margin: 0; font-size: 13.5px; color: var(--ink-2); }
+  .metric p .needs {
+    display: block; font-family: "IBM Plex Mono", monospace; font-size: 11.5px;
+    color: var(--pine); margin-top: 5px;
+  }
+  @media (max-width: 620px) { .metric { grid-template-columns: 1fr; gap: 6px; } }
+
+  /* --- forks --- */
+  .forks { display: grid; gap: 12px; }
+  .fork { background: var(--panel); border: 1px solid var(--rule); border-radius: 4px; padding: 15px 17px; }
+  .fork h4 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+  .fork p { margin: 0 0 9px; font-size: 13.5px; color: var(--ink-2); }
+  .rec {
+    display: inline-block; font-size: 13px; color: var(--ink-2);
+    background: var(--pine-soft); border-radius: 3px; padding: 6px 10px;
+  }
+  .rec b { color: var(--pine); font-weight: 600; }
+
+  /* --- stacks --- */
+  .cols2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 680px) { .cols2 { grid-template-columns: 1fr; } }
+  .stack { background: var(--panel); border: 1px solid var(--rule); border-radius: 4px; overflow: hidden; }
+  .stack > h4 {
+    font-size: 11px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase;
+    color: var(--ink-3); padding: 11px 15px; background: var(--panel-2);
+    border-bottom: 1px solid var(--rule);
+  }
+  .stack ul { list-style: none; margin: 0; padding: 4px 0; }
+  .stack li { padding: 9px 15px; font-size: 13.5px; color: var(--ink-2); }
+  .stack li + li { border-top: 1px dotted var(--rule); }
+  .stack li b { color: var(--ink); font-weight: 600; display: block; }
+  .stack li code {
+    font-family: "IBM Plex Mono", monospace; font-size: 11.5px; color: var(--ink-3);
+    display: block; margin-top: 3px;
+  }
+
+  /* --- endpoints --- */
+  .api { display: grid; gap: 14px; }
+  .ctrl { background: var(--panel); border: 1px solid var(--rule); border-radius: 4px; overflow: hidden; }
+  .ctrl > header {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+    flex-wrap: wrap; padding: 11px 15px; background: var(--panel-2);
+    border-bottom: 1px solid var(--rule);
+  }
+  .ctrl h3 {
+    font-family: "IBM Plex Mono", monospace; font-size: 13.5px; font-weight: 600;
+    letter-spacing: -.01em;
+  }
+  .ctrl .state { font-size: 11px; color: var(--ink-3); }
+  .ctrl .state b { font-weight: 600; }
+  .s-new b { color: var(--pine); }
+  .s-edit b { color: var(--ochre); }
+  .s-later b { color: var(--plum); }
+
+  .eps { display: grid; }
+  .ep {
+    display: grid; grid-template-columns: 52px 1fr auto; gap: 11px;
+    align-items: baseline; padding: 9px 15px;
+  }
+  .ep + .ep { border-top: 1px dotted var(--rule); }
+  .ep .verb {
+    font-family: "IBM Plex Mono", monospace; font-size: 9.5px; font-weight: 600;
+    letter-spacing: .05em; border-radius: 2px; padding: 2px 0; text-align: center;
+  }
+  .v-get { background: var(--pine-soft); color: var(--pine); }
+  .v-post { background: var(--ochre-soft); color: var(--ochre); }
+  .v-put { background: var(--plum-soft); color: var(--plum); }
+  .v-del { background: var(--rust-soft); color: var(--rust); }
+  .ep .path {
+    font-family: "IBM Plex Mono", monospace; font-size: 12.5px; color: var(--ink);
+    overflow-wrap: anywhere;
+  }
+  .ep .path em {
+    display: block; font-family: "IBM Plex Sans", sans-serif; font-style: normal;
+    font-size: 12.5px; color: var(--ink-2); margin-top: 3px; line-height: 1.5;
+  }
+  .ep .who {
+    font-family: "IBM Plex Mono", monospace; font-size: 9.5px; color: var(--ink-3);
+    letter-spacing: .04em; white-space: nowrap; text-align: right;
+  }
+  @media (max-width: 560px) {
+    .ep { grid-template-columns: 52px 1fr; }
+    .ep .who { grid-column: 2; text-align: left; margin-top: 2px; }
+  }
+
+  .ctrl footer {
+    padding: 10px 15px; border-top: 1px solid var(--rule); background: var(--panel-2);
+    font-size: 12.5px; color: var(--ink-2);
+  }
+
+  footer.src {
+    margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--rule);
+    font-family: "IBM Plex Mono", monospace; font-size: 11.5px; color: var(--ink-3);
+  }
+</style>
+
+<style>
+  :root { color-scheme: light dark; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; }
+  img { max-width: 100%; }
+  [hidden] { display: none !important; }
+  /* Mermaid injects its own SVG sizing; keep it inside the scroll container. */
+  .diagram svg { max-width: none; height: auto; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">FitBook · data model roadmap</div>
+  <h1>FitBook Schema Roadmap</h1>
+  <p class="lede">What the six tables need to become to support attendance, a staff dashboard, and the features after that — expressed as migrations, in the order they should land. Services and controllers come later; this is the shape they'll be written against.</p>
+  <p class="audience">Written for: you, working solo on this repo.</p>
+
+  <section>
+    <h2>What today's schema can't do yet</h2>
+    <p class="sub">Four structural gaps, all cheap to close now and progressively more expensive once real rows exist.</p>
+    <div class="facts">
+      <div class="fact">
+        <span class="tag">NO SIGNAL</span>
+        <p><b>A booking has no outcome.</b> <code class="i">Bookings.StatusId</code> tracks whether the booking exists (Confirmed / Cancelled), not whether the person turned up. Nothing in the schema can distinguish a member who trained from one who ghosted — so no attendance metric is derivable from it at all.</p>
+      </div>
+      <div class="fact">
+        <span class="tag">NO COUNTERS</span>
+        <p><b>Occupancy is only derivable by counting.</b> "Is this session full" means <code class="i">COUNT(*)</code> over Bookings every time, and it can't be checked atomically — two members claiming the last seat will both succeed. <code class="i">Sessions.Capacity</code> exists but nothing holds the number taken.</p>
+      </div>
+      <div class="fact">
+        <span class="tag">NO INDEX</span>
+        <p><b>Every dashboard query is a date range over <code class="i">Sessions.StartAt</code>, which is unindexed.</b> Fine at a few hundred rows, a table scan per tile at scale.</p>
+      </div>
+      <div class="fact">
+        <span class="tag">NO HISTORY</span>
+        <p><b>Deletes are hard deletes, and every FK is <code class="i">Restrict</code>.</b> So deleting a class that ever ran will start throwing once data exists — and if you work around that by deleting the sessions first, you erase the history the dashboard reports on. The schema needs a soft-delete concept before it needs any reporting.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Migration order</h2>
+    <p class="sub">Six migrations. The first three are everything attendance and the dashboard need; the rest are the features after.</p>
+
+    <div class="mig">
+      <div class="idx">M1</div>
+      <div>
+        <h3>Attendance on bookings<span class="gate g-now">your ask</span></h3>
+        <p class="why">Attendance is an outcome of a booking, so it belongs on the booking row. The unique <code class="i">(SessionId, UserId)</code> index already guarantees exactly one per member per session — a separate table would have to re-establish that rule by hand and pay a join on every read.</p>
+        <div class="ddl"><span class="tn">Bookings</span>
+  <span class="plus">+</span> AttendanceStatusId  int      FK → Lookups   <span class="cm">-- attendance-status</span>
+  <span class="plus">+</span> SourceId            int      FK → Lookups   <span class="cm">-- booking-source</span>
+  <span class="plus">+</span> CheckedInAt         datetime2 null
+  <span class="plus">+</span> MarkedByUserId      int      FK → Users, null
+  <span class="plus">+</span> CancelledAt         datetime2 null
+
+<span class="tn">Lookups</span>  <span class="cm">-- seed two new types</span>
+  <span class="plus">+</span> attendance-status : Booked · Attended · NoShow · LateCancel
+  <span class="plus">+</span> booking-source    : Online · WalkIn · StaffBooked</div>
+        <ul>
+          <li><b>Two status columns, not one.</b> <code class="i">StatusId</code> stays the booking's own lifecycle; <code class="i">AttendanceStatusId</code> is what happened on the day. Collapsing them into one column loses the ability to say "cancelled in time" versus "cancelled an hour before".</li>
+          <li><b><code class="i">SourceId</code> is what makes walk-ins ordinary.</b> Someone who turns up unbooked gets a booking row created at the door with <code class="i">WalkIn</code> — attendance stays 1:1 with bookings, and walk-ins land in every stat automatically instead of needing their own table and their own query path.</li>
+          <li><b><code class="i">MarkedByUserId</code> nullable on purpose.</b> Null means the automated sweep set it rather than a person — which is itself the signal that nobody closed the session out.</li>
+          <li><b><code class="i">CancelledAt</code> earns its place</b> because LateCancel is defined relative to <code class="i">Sessions.StartAt</code>. Without the timestamp you can classify it once and never re-derive it if the policy window changes.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="mig">
+      <div class="idx">M2</div>
+      <div>
+        <h3>Counters and indexes<span class="gate g-now">enables the dashboard</span></h3>
+        <p class="why">Two denormalized integers turn the dashboard from an aggregation problem into a single indexed read — and fix the last-seat race at the same time. Same migration, because they're the same idea.</p>
+        <div class="ddl"><span class="tn">Sessions</span>
+  <span class="plus">+</span> SeatsTaken       int not null default 0
+  <span class="plus">+</span> CheckedInCount   int not null default 0
+
+<span class="cm">-- indexes</span>
+  <span class="plus">+</span> IX_Sessions_StartAt              (StartAt)
+  <span class="plus">+</span> IX_Sessions_ClassId_StartAt      (ClassId, StartAt)
+  <span class="plus">+</span> IX_Bookings_SessionId_Attendance (SessionId, AttendanceStatusId)
+  <span class="plus">+</span> IX_Bookings_UserId_CreatedAt     (UserId, CreatedAt)</div>
+        <ul>
+          <li><b>The counters are how you claim a seat safely.</b> <code class="i">UPDATE Sessions SET SeatsTaken = SeatsTaken + 1 WHERE Id = @id AND SeatsTaken &lt; Capacity</code> — zero rows affected means full. One statement, correct under concurrency, no read-then-write gap. Worth deciding at schema time because it's the reason the column exists.</li>
+          <li><b>Denormalized means it can drift,</b> so plan for a reconciliation query that recomputes both from Bookings. Run it nightly or on demand; you'll want it the first time a bug leaves a counter wrong.</li>
+          <li><code class="i">IX_Bookings_UserId_CreatedAt</code> is for the member-facing history and the at-risk list, which query by person rather than by session.</li>
+          <li>Consider a filtered index on <code class="i">Sessions(StartAt) WHERE StatusId = Scheduled</code> once cancelled sessions accumulate.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="mig">
+      <div class="idx">M3</div>
+      <div>
+        <h3>Staff role, soft delete, auth hooks<span class="gate g-now">your ask</span></h3>
+        <p class="why">The role change is two lines with one trap. Soft delete rides along because both touch every table's read path — and since this migration already opens <code class="i">Users</code>, it's the cheapest moment to add the two columns auth will want.</p>
+        <div class="ddl"><span class="tn">UserRole</span> enum
+  <span class="plus">+</span> Staff = 4        <span class="cm">-- append; do NOT renumber 1-3</span>
+
+<span class="tn">Users · Trainers · Classes</span>
+  <span class="plus">+</span> IsActive   bit not null default 1
+  <span class="plus">+</span> DeletedAt  datetime2 null
+
+<span class="tn">Users</span>  <span class="cm">-- auth hooks; not required, but free now</span>
+  <span class="plus">+</span> SecurityStamp  uniqueidentifier null
+  <span class="plus">+</span> LastLoginAt    datetime2 null</div>
+        <ul>
+          <li><b>JWT itself needs no schema at all.</b> <code class="i">Users</code> already carries everything the token claims need — <code class="i">Id</code>, <code class="i">Role</code>, <code class="i">Name</code>, <code class="i">Email</code>. A stateless token is signed, not stored. Auth is a config and middleware change, not a migration.</li>
+          <li><b>What a long-lived token costs you is revocation.</b> Promote a member to Staff and their existing token still claims Member until it expires — a role change that silently doesn't take effect, on the role that gates the dashboard. Same for a password change or someone leaving.</li>
+          <li><b><code class="i">SecurityStamp</code> is the hook that fixes that later.</b> Rotate it on password or role change, carry it as a claim, and validate it when you're ready to pay a lookup per request. Adding the column now is free; adding it once there are users means a migration plus a backfill plus a change to the issuance path.</li>
+          <li><b>Refresh tokens are the real schema work, and they're deferred.</b> When they land: a <code class="i">RefreshTokens</code> table (<code class="i">UserId</code>, <code class="i">TokenHash</code>, <code class="i">ExpiresAt</code>, <code class="i">RevokedAt</code>, <code class="i">ReplacedByTokenId</code>). Password reset wants the same table — plan them as one piece of work, not two.</li>
+          <li><b>Append the enum value, never renumber.</b> There's already a <code class="i">ReorderUserRoles</code> migration in your history — rows in the database carry those numbers. Changing an enum's numbering is a data migration with an UPDATE, not a code edit, and the two are easy to confuse.</li>
+          <li><b>Soft delete via an EF global query filter</b> (<code class="i">HasQueryFilter(x =&gt; x.IsActive)</code>) so every read excludes deleted rows without touching call sites. Sessions and Bookings keep hard rows — they're the history.</li>
+          <li><b>Watch the unique indexes.</b> <code class="i">Classes.Name</code> and <code class="i">Users.Email</code> are unique; a soft-deleted row keeps occupying that name forever. Either make them filtered unique indexes (<code class="i">WHERE IsActive = 1</code>) or accept that names are never reusable. This is the detail that bites later.</li>
+          <li><b>One role per user is now a known limit.</b> A trainer who also covers the front desk can't be represented. Fine today; when a fifth role or a dual role appears, that's the trigger to move to a <code class="i">UserRoles</code> join table rather than widening the enum again.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="mig">
+      <div class="idx">M4</div>
+      <div>
+        <h3>Waitlist<span class="gate g-soon">next</span></h3>
+        <p class="why">The highest-value addition after attendance, and it reuses M2's counter pattern exactly — a cancellation promotes the next person and the seat never goes to waste.</p>
+        <div class="ddl"><span class="tn">Waitlist</span>  <span class="cm">-- new table</span>
+  Id           int PK
+  SessionId    int FK → Sessions
+  UserId       int FK → Users
+  Position     int
+  StatusId     int FK → Lookups   <span class="cm">-- Waiting · Promoted · Expired</span>
+  PromotedAt   datetime2 null
+  CreatedAt / UpdatedAt
+  UK (SessionId, UserId)          <span class="cm">-- mirrors the Bookings rule</span></div>
+        <ul>
+          <li><b>Separate table, not a booking status.</b> A waitlist entry isn't a seat — folding it into Bookings would corrupt <code class="i">SeatsTaken</code> and every fill-rate number that reads from it.</li>
+          <li><code class="i">Position</code> stored rather than derived from <code class="i">CreatedAt</code>, so staff can move someone up manually.</li>
+          <li>Promotion is one transaction: insert the Booking, increment <code class="i">SeatsTaken</code>, mark the waitlist row Promoted.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="mig">
+      <div class="idx">M5</div>
+      <div>
+        <h3>Memberships and credits<span class="gate g-soon">revenue model</span></h3>
+        <p class="why">Where the product stops being a schedule and starts being a business. Also the reason late-cancel tracking in M1 matters — a late cancel burns a credit.</p>
+        <div class="ddl"><span class="tn">MembershipPlans</span>            <span class="tn">UserMemberships</span>
+  Id            int PK           Id             int PK
+  Name          nvarchar(80)     UserId         int FK → Users
+  CreditCount   int null         PlanId         int FK → MembershipPlans
+  IsUnlimited   bit              CreditsLeft    int null
+  DurationDays  int              StartsAt / EndsAt  datetime2
+  Price         decimal(10,2)    StatusId       int FK → Lookups
+  IsActive      bit              CreatedAt / UpdatedAt
+
+<span class="tn">Bookings</span>
+  <span class="plus">+</span> UserMembershipId  int FK null   <span class="cm">-- which pass paid for this seat</span></div>
+        <ul>
+          <li><b>Money as <code class="i">decimal(10,2)</code>, never float.</b> Worth stating because EF will happily map a <code class="i">double</code> and you won't notice until totals are off by fractions of a rupee.</li>
+          <li><b><code class="i">CreditsLeft</code> is a counter with the same concurrency shape as <code class="i">SeatsTaken</code></b> — decrement conditionally (<code class="i">WHERE CreditsLeft &gt; 0</code>), same pattern, same transaction as the booking.</li>
+          <li><b>The FK from Bookings back to the membership</b> is what lets you refund the right pass on cancellation, and what makes "revenue per class" answerable later.</li>
+          <li>A ledger table (one row per credit movement) is the fuller answer and the one you'll eventually want — but only once someone disputes a balance. Start with the counter.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="mig">
+      <div class="idx">M6</div>
+      <div>
+        <h3>Locations and schedule templates<span class="gate g-later">only if needed</span></h3>
+        <p class="why">Both are cheap now and painful later. Add the location key speculatively; add templates only when creating sessions one at a time actually annoys you.</p>
+        <div class="ddl"><span class="tn">Locations</span>                   <span class="tn">ScheduleTemplates</span>
+  Id         int PK               Id           int PK
+  Name       nvarchar(120)        ClassId      int FK → Classes
+  TimeZoneId nvarchar(60)         DayOfWeek    tinyint
+  IsActive   bit                  StartTime    time
+                                  TrainerId    int FK → Trainers
+<span class="tn">Classes · Sessions</span>              Capacity     int
+  <span class="plus">+</span> LocationId int FK          IsActive     bit</div>
+        <ul>
+          <li><b>The tenant key is the expensive retrofit.</b> Adding <code class="i">LocationId</code> to two tables with one seeded row costs nothing today; adding it across a populated schema means backfilling every row and revisiting every query and index.</li>
+          <li><b><code class="i">TimeZoneId</code> lives on the location</b> because that's what actually determines wall-clock time. See the UTC decision below — this is where the answer is stored.</li>
+          <li>Templates generate Sessions; they don't replace them. Generated rows stay ordinary sessions so nothing downstream needs to know templates exist.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Target schema after M1–M3</h2>
+    <p class="sub">The shape everything for attendance and the dashboard is written against. New columns marked.</p>
+    <div class="diagram">
+<pre class="mermaid">
+erDiagram
+    Users ||--o| Trainers : "is a"
+    Users ||--o{ Bookings : "places"
+    Users ||--o{ Bookings : "marks"
+    Trainers ||--o{ Classes : "teaches"
+    Classes ||--o{ Sessions : "runs as"
+    Sessions ||--o{ Bookings : "holds"
+    Lookups ||--o{ Bookings : "attendance + source"
+    Lookups ||--o{ Sessions : "status"
+    Lookups ||--o{ Classes : "category"
+
+    Users {
+        int Id PK
+        nvarchar Name
+        nvarchar Email UK
+        nvarchar PasswordHash
+        tinyint Role "NEW value Staff=4"
+        bit IsActive "NEW"
+        datetime2 DeletedAt "NEW"
+    }
+    Trainers {
+        int Id PK
+        int UserId FK "unique"
+        nvarchar Name
+        nvarchar Specialty
+        bit IsActive "NEW"
+    }
+    Classes {
+        int Id PK
+        nvarchar Name UK
+        int CategoryId FK
+        int InitCapacity
+        int TrainerId FK
+        bit IsActive "NEW"
+    }
+    Sessions {
+        int Id PK
+        int ClassId FK
+        datetime2 StartAt "NEW index"
+        int Capacity
+        int SeatsTaken "NEW"
+        int CheckedInCount "NEW"
+        int StatusId FK
+    }
+    Bookings {
+        int Id PK
+        int UserId FK
+        int SessionId FK
+        int StatusId FK "lifecycle"
+        int AttendanceStatusId FK "NEW outcome"
+        int SourceId FK "NEW"
+        datetime2 CheckedInAt "NEW"
+        int MarkedByUserId FK "NEW"
+        datetime2 CancelledAt "NEW"
+    }
+    Lookups {
+        int Id PK
+        nvarchar Type "NEW 2 types"
+        nvarchar Value
+    }
+</pre>
+    </div>
+    <p class="caption">Users now points at Bookings twice — once as the member, once as whoever marked attendance. Configure the second with <code class="i">.WithMany()</code> and no inverse navigation, or EF can't tell which relationship is which.</p>
+  </section>
+
+  <section>
+    <h2>The dashboard, and what it needs from the schema</h2>
+    <p class="sub">The reason to settle the schema first: every tile is only cheap if the columns behind it exist. Figures below are illustrative.</p>
+
+    <div class="mock">
+      <div class="mock-bar">
+        <strong>Staff · Today</strong>
+        <span>illustrative figures</span>
+      </div>
+      <div class="tiles">
+        <div class="tile">
+          <div class="k">Attendance rate</div>
+          <div class="v">84%</div>
+          <div class="d up">▲ 6 pts vs last week</div>
+          <div class="src">Bookings.AttendanceStatusId</div>
+        </div>
+        <div class="tile">
+          <div class="k">No-show rate</div>
+          <div class="v">11%</div>
+          <div class="d down">▲ 3 pts vs last week</div>
+          <div class="src">+ the sweep job</div>
+        </div>
+        <div class="tile">
+          <div class="k">Seat utilization</div>
+          <div class="v">67%</div>
+          <div class="d flat">— flat vs last week</div>
+          <div class="src">Sessions.SeatsTaken / Capacity</div>
+        </div>
+        <div class="tile">
+          <div class="k">Active members</div>
+          <div class="v">142</div>
+          <div class="d up">▲ 9 in last 28 days</div>
+          <div class="src">IX_Bookings_UserId_CreatedAt</div>
+        </div>
+      </div>
+
+      <div class="mock-split">
+        <div class="board">
+          <h4>Sessions today</h4>
+          <div class="roster">
+            <div class="rrow"><span class="t">07:00</span><span class="c">Strength · Ayesha</span><span class="f">14/16</span><span class="pill p-ok">12 in</span></div>
+            <div class="rrow"><span class="t">09:30</span><span class="c">Yoga · Bilal</span><span class="f">6/20</span><span class="pill p-warn">low fill</span></div>
+            <div class="rrow"><span class="t">12:00</span><span class="c">Cardio · Ayesha</span><span class="f">18/18</span><span class="pill p-ok">full · 3 wait</span></div>
+            <div class="rrow"><span class="t">17:30</span><span class="c">Strength · —</span><span class="f">15/16</span><span class="pill p-bad">no trainer</span></div>
+            <div class="rrow"><span class="t">19:00</span><span class="c">Yoga · Bilal</span><span class="f">11/20</span><span class="pill p-idle">upcoming</span></div>
+          </div>
+        </div>
+        <div class="board">
+          <h4>Utilization · day × hour</h4>
+          <div class="heat">
+            <div class="hl"></div>
+            <div class="hh">M</div><div class="hh">T</div><div class="hh">W</div><div class="hh">T</div><div class="hh">F</div><div class="hh">S</div><div class="hh">S</div>
+
+            <div class="hl">07</div>
+            <div class="cell h3"></div><div class="cell h4"></div><div class="cell h3"></div><div class="cell h4"></div><div class="cell h3"></div><div class="cell h1"></div><div class="cell"></div>
+
+            <div class="hl">09</div>
+            <div class="cell h1"></div><div class="cell h1"></div><div class="cell h2"></div><div class="cell h1"></div><div class="cell h1"></div><div class="cell h3"></div><div class="cell h2"></div>
+
+            <div class="hl">12</div>
+            <div class="cell h2"></div><div class="cell h3"></div><div class="cell h2"></div><div class="cell h3"></div><div class="cell h2"></div><div class="cell"></div><div class="cell"></div>
+
+            <div class="hl">17</div>
+            <div class="cell h4"></div><div class="cell h4"></div><div class="cell h4"></div><div class="cell h3"></div><div class="cell h2"></div><div class="cell h1"></div><div class="cell h1"></div>
+
+            <div class="hl">19</div>
+            <div class="cell h3"></div><div class="cell h4"></div><div class="cell h3"></div><div class="cell h4"></div><div class="cell h1"></div><div class="cell"></div><div class="cell"></div>
+          </div>
+          <div class="heat-key">
+            <span>empty</span>
+            <i style="background:var(--heat-0)"></i><i style="background:var(--heat-1)"></i><i style="background:var(--heat-2)"></i><i style="background:var(--heat-3)"></i><i style="background:var(--heat-4)"></i>
+            <span>full</span>
+          </div>
+        </div>
+      </div>
+      <p class="mock-note">The heatmap is the tile that earns its place — mid-morning dead, weekday evenings saturated, a timetable decision visible without reading a number. It's also the one that needs <code class="i">IX_Sessions_ClassId_StartAt</code> to not be a scan.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Metric → column</h2>
+    <p class="sub">Each number worth putting on the dashboard, and the schema it depends on. A metric with no column behind it is a metric you can't ship.</p>
+    <div class="metrics">
+      <div class="metric">
+        <div class="name">Attendance rate<em>attended ÷ booked</em></div>
+        <p>The single most useful number in the product, and completely underivable today. Always rendered against the prior period — the level alone tells you nothing.
+        <span class="needs">needs · M1 AttendanceStatusId</span></p>
+      </div>
+      <div class="metric">
+        <div class="name">No-show rate<em>by class and by trainer</em></div>
+        <p>Only trustworthy if something closes sessions out automatically. A sweep flips stale <code class="i">Booked</code> rows to <code class="i">NoShow</code> after the session ends — without it this counts sessions nobody marked, and every derived number is wrong.
+        <span class="needs">needs · M1 + a scheduled sweep</span></p>
+      </div>
+      <div class="metric">
+        <div class="name">Seat utilization<em>taken ÷ capacity</em></div>
+        <p>Reads straight off the session row once the counter exists — no aggregation, no join. This is the payoff for denormalizing.
+        <span class="needs">needs · M2 SeatsTaken</span></p>
+      </div>
+      <div class="metric">
+        <div class="name">Active members<em>≥1 attendance in 28 days</em></div>
+        <p>A retention proxy that needs no payment data. Counting registered users flatters you; counting people who showed up doesn't.
+        <span class="needs">needs · M1 + IX_Bookings_UserId_CreatedAt</span></p>
+      </div>
+      <div class="metric">
+        <div class="name">At-risk list<em>named members, not a count</em></div>
+        <p>Attended 4+ times last month, nothing in 14 days. The one panel someone can act on today — it produces a call list. Depends on history surviving, which is why soft delete precedes it.
+        <span class="needs">needs · M1 + M3 soft delete</span></p>
+      </div>
+      <div class="metric">
+        <div class="name">Booking lead time<em>median hours ahead</em></div>
+        <p>How far in advance to publish the timetable. Falls out of <code class="i">Bookings.CreatedAt</code> minus <code class="i">Sessions.StartAt</code> — already derivable, no new column.
+        <span class="needs">needs · nothing new</span></p>
+      </div>
+      <div class="metric">
+        <div class="name">Waitlist conversion<em>promoted ÷ waiting</em></div>
+        <p>Whether the waitlist actually recovers cancelled seats, and therefore whether it was worth building.
+        <span class="needs">needs · M4</span></p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Decisions worth making before M1</h2>
+    <p class="sub">Four forks that are free today and structural later. Recommendations attached.</p>
+    <div class="forks">
+      <div class="fork">
+        <h4>Attendance on the booking, or its own table?</h4>
+        <p>A separate <code class="i">Attendance</code> table buys repeated check-in events and a fuller audit trail. It costs a join on every dashboard query plus re-establishing by hand the uniqueness rule Bookings already enforces.</p>
+        <span class="rec"><b>Recommendation:</b> columns on Bookings, as in M1. Split it out only if you ever need more than one check-in event per booking.</span>
+      </div>
+      <div class="fork">
+        <h4>UTC or local time in <code class="i">StartAt</code>?</h4>
+        <p>It's a bare <code class="i">datetime2</code> with no zone today. A gym runs on wall-clock time — "the 7am class" stays 7am across a DST change, which a stored UTC instant will not.</p>
+        <span class="rec"><b>Recommendation:</b> store UTC, keep an IANA zone id (config now, <code class="i">Locations.TimeZoneId</code> at M6), convert at the edges. Settle it before real bookings exist — it's miserable to unpick after.</span>
+      </div>
+      <div class="fork">
+        <h4>Keep stretching the Lookups table?</h4>
+        <p>M1 adds two more vocabularies to a table already serving three, and nothing at the database level stops <code class="i">AttendanceStatusId</code> pointing at a <code class="i">class</code> row. Every status join is also an extra join.</p>
+        <span class="rec"><b>Recommendation:</b> keep Lookups for anything a human might add (class categories), and use C# enums with <code class="i">HasConversion&lt;byte&gt;</code> for closed sets the code branches on — attendance status, booking source. Fewer joins, and the compiler enforces what the FK can't.</span>
+      </div>
+      <div class="fork">
+        <h4>One gym, or several?</h4>
+        <p>Multi-location means a key on classes and sessions and a filter on essentially every query and index.</p>
+        <span class="rec"><b>Recommendation:</b> if a second branch is even plausible, add <code class="i">LocationId</code> now with one seeded row. Retrofitting a tenant key across a populated schema is a weekend you won't enjoy.</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Schema hygiene worth folding in</h2>
+    <p class="sub">Small things that get harder the more tables exist. Cheap to do alongside the migrations above.</p>
+    <div class="cols2">
+      <div class="stack">
+        <h4>Modelling</h4>
+        <ul>
+          <li><b>Timestamps in SaveChanges</b>Set by hand in every service today — one override means they can't be forgotten on a new entity.<code>AppDbContext.SaveChangesAsync</code></li>
+          <li><b>CreatedBy / UpdatedBy</b>Add alongside the timestamps once there's an authenticated caller to attribute.<code>all tables</code></li>
+          <li><b>Trainers.Name duplicates Users.Name</b>Two sources of truth that can drift. Drop the column and read through the FK.<code>Domain/Trainer.cs</code></li>
+          <li><b>Check constraints</b><code class="i">Capacity &gt; 0</code>, <code class="i">SeatsTaken &lt;= Capacity</code>, <code class="i">Price &gt;= 0</code>. The database should refuse states the code considers impossible.</li>
+          <li><b>Rowversion on Sessions</b>If you'd rather have optimistic concurrency than the conditional-update pattern — pick one, not both.</li>
+        </ul>
+      </div>
+      <div class="stack">
+        <h4>Growth</h4>
+        <ul>
+          <li><b>Nightly rollup table</b><code class="i">DailyClassStats(Date, ClassId, Booked, Attended, NoShow, CapacityOffered)</code>. Build it when the summary query crosses ~300ms — not before.</li>
+          <li><b>Notifications table</b>Type, recipient, payload, SentAt, status. Needed the moment reminders exist, and reminders are what actually reduce no-shows.</li>
+          <li><b>Payments</b>Only after M5 memberships. A payment references a membership, not a booking.</li>
+          <li><b>Archive old sessions</b>Nothing to do for years — but it's why Sessions and Bookings stay hard rows while everything else goes soft-delete.</li>
+          <li><b>Seed a realistic history</b>~8 weeks of backdated sessions, bookings and attendance behind the existing <code class="i">Seed:Enabled</code> flag. An empty dashboard can't be evaluated, or demoed.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Part two — controllers and endpoints</h2>
+    <p class="sub">The API surface the schema above implies. Four controllers exist and need changes; five are new. Roles in the right column assume <code class="i">Staff = 4</code> from M3.</p>
+
+    <div class="facts" style="margin-bottom: 22px">
+      <div class="fact" style="border-left-color: var(--pine)">
+        <span class="tag" style="background: var(--pine-soft); color: var(--pine)">LANDED</span>
+        <p><b>JWT authentication is in as of 2026-09-20.</b> Login and register issue a signed token, <code class="i">UseAuthentication()</code> sits correctly before <code class="i">UseAuthorization()</code>, all four controllers carry <code class="i">[Authorize]</code> with <code class="i">[AllowAnonymous]</code> scoped to auth, and register hard-codes the Member role so nobody can self-promote. The role claim is emitted as the enum name, so <code class="i">[Authorize(Roles = "Staff")]</code> will work unchanged once M3 adds it.</p>
+      </div>
+      <div class="fact">
+        <span class="tag">KEY</span>
+        <p><b>The signing key is committed to <code class="i">appsettings.json</code>.</b> Anyone who can read the repo can mint a token with any user id and any role, which the <code class="i">[Authorize]</code> attributes cannot detect. The project already has <code class="i">UserSecretsId</code> set and <code class="i">appsettings.Local.json</code> gitignored — the key simply went into the wrong file. Move it, and treat the committed one as burned.</p>
+      </div>
+      <div class="fact">
+        <span class="tag">ROLES</span>
+        <p><b><code class="i">[Authorize]</code> with no role means any logged-in user.</b> A member who registers through the public endpoint can still <code class="i">POST /api/classes</code> and <code class="i">DELETE /api/trainers/3</code>. Anonymous access is closed; privilege escalation isn't. The role column below is what's still missing, not what's enforced.</p>
+      </div>
+    </div>
+
+    <div class="api">
+
+      <div class="ctrl">
+        <header>
+          <h3>AuthController</h3>
+          <span class="state s-edit">exists · <b>mostly done</b></span>
+        </header>
+        <div class="eps">
+          <div class="ep"><span class="verb v-post">POST</span><span class="path">/api/auth/login<em><b>Done.</b> Returns a JWT carrying sub, name and role alongside the user fields. Worth adding: stamp LastLoginAt here once M3 adds the column.</em></span><span class="who">anonymous</span></div>
+          <div class="ep"><span class="verb v-post">POST</span><span class="path">/api/auth/register<em><b>Done.</b> Same response shape as login, and the role is hard-coded to Member — which is what stops the public endpoint being a path to an admin account.</em></span><span class="who">anonymous</span></div>
+          <div class="ep"><span class="verb v-post">POST</span><span class="path">/api/auth/refresh<em><b>Deferred.</b> One long-lived access token for now; this arrives with the RefreshTokens table in M3's notes. Until then, accept that nothing can be revoked before it expires.</em></span><span class="who">anonymous</span></div>
+          <div class="ep"><span class="verb v-get">GET</span><span class="path">/api/auth/me<em>Current user and role, so a client can restore a session on reload without decoding the token itself.</em></span><span class="who">any authenticated</span></div>
+        </div>
+        <footer>Middleware order is already correct. Still open here: a <b>fallback policy</b> so the five new controllers below can't ship unprotected by omission, <b>ProblemDetails on 401/403</b> (they currently return plain text while everything else returns JSON), a <b>bearer button in Swagger</b> so protected endpoints can be tried from the UI that's already enabled, and a rate limiter on login.</footer>
+      </div>
+
+      <div class="ctrl">
+        <header>
+          <h3>SessionsController</h3>
+          <span class="state s-new">new · <b>core flow</b></span>
+        </header>
+        <div class="eps">
+          <div class="ep"><span class="verb v-get">GET</span><span class="path">/api/sessions?from=&amp;to=&amp;classId=&amp;trainerId=<em>The timetable. Date range is required, not optional — an unbounded query here is the table scan M2's index exists to prevent.</em></span><span class="who">any authenticated</span></div>
+          <div class="ep"><span class="verb v-get">GET</span><span class="path">/api/sessions/{id}<em>Detail with SeatsTaken and Capacity, so the client can render fill state without a second call.</em></span><span class="who">any authenticated</span></div>
+          <div class="ep"><span class="verb v-post">POST</span><span class="path">/api/sessions<em>Create one, copying InitCapacity off the class as the default.</em></span><span class="who">Admin · Staff</span></div>
+          <div class="ep"><span class="verb v-post">POST</span><span class="path">/api/sessions/generate<em>Bulk-create a date range from a class or template. Needed long before M6 — creating a term's sessions one at a time gets old fast.</em></span><span class="who">Admin · Staff</span></div>
+          <div class="ep"><span class="verb v-put">PUT</span><span class="path">/api/sessions/{id}<em>Reschedule or resize. Reject a capacity below current SeatsTaken rather than silently overbooking.</em></span><span class="who">Admin · Staff</span></div>
+          <div class="ep"><span class="verb v-post">POST</span><span class="path">/api/sessions/{id}/cancel<em>Status change, not a delete — the bookings under it are history the dashboard reads.</em></span><span class="who">Admin · Staff</span></div>
+          <div class="ep"><span class="verb v-get">GET</span><span class="path">/api/sessions/{id}/roster<em>Who's booked and each one's attendance state. This is the screen staff actually work from.</em></span><span class="who">Admin · Staff · Trainer (own)</span></div>
+        </div>
+      </div>
+
+      <div class="ctrl">
+        <header>
+          <h3>BookingsController</h3>
+          <span class="state s-new">new · <b>core flow</b></span>
+        </header>
+        <div class="eps">
+          <div class="ep"><span class="verb v-post">POST</span><span class="path">/api/bookings<em>Body carries sessionId only. <b>Take the user id from the token, never the body</b> — otherwise any member can book as anyone else.</em></span><span class="who">Member</span></div>
+          <div class="ep"><span class="verb v-del">DEL</span><span class="path">/api/bookings/{id}<em>Cancel. Sets CancelledAt, decrements SeatsTaken in the same transaction, and classifies late vs in-time against Sessions.StartAt.</em></span><span class="who">owner · Admin · Staff</span></div>
+          <div class="ep"><span class="verb v-get">GET</span><span class="path">/api/bookings/me?from=&amp;to=<em>My upcoming and past classes.</em></span><span class="who">any authenticated</span></div>
+          <div class="ep"><span class="verb v-post">POST</span><span class="path">/api/bookings/for-member<em>Staff books on someone's behalf. Writes SourceId = StaffBooked so the stats can tell the two apart.</em></span><span class="who">Admin · Staff</span></div>
+        </div>
+        <footer><b>The one hard part:</b> the seat claim. <code class="i">UPDATE Sessions SET SeatsTaken = SeatsTaken + 1 WHERE Id = @id AND SeatsTaken &lt; Capacity</code> inside the insert's transaction — zero rows affected returns 409. A read-then-write here lets two people take the last seat, and it's the bug most likely to reach production.</footer>
+      </div>
+
+      <div class="ctrl">
+        <header>
+          <h3>AttendanceController</h3>
+          <span class="state s-new">new · <b>needs M1</b></span>
+        </header>
+        <div class="eps">
+          <div class="ep"><span class="verb v-post">POST</span><span class="path">/api/sessions/{id}/attendance<em>Bulk: a list of {bookingId, status} for the whole roster in one call. Staff mark a room, not a person — one request per member is the wrong shape.</em></span><span class="who">Admin · Staff · Trainer (own)</span></div>
+          <div class="ep"><span class="verb v-post">POST</span><span class="path">/api/sessions/{id}/walk-in<em>Body carries userId. Creates the booking with SourceId = WalkIn and marks it Attended, in one transaction, incrementing both counters.</em></span><span class="who">Admin · Staff</span></div>
+          <div class="ep"><span class="verb v-put">PATCH</span><span class="path">/api/bookings/{id}/attendance<em>Correct a single mark afterwards. Records MarkedByUserId so corrections are attributable.</em></span><span class="who">Admin · Staff</span></div>
+        </div>
+        <footer><b>Not an endpoint, but belongs here:</b> a hosted service every 15 minutes flipping stale <code class="i">Booked</code> rows to <code class="i">NoShow</code> once their session has ended. Without it, "no-show rate" just measures which sessions nobody closed out, and every dashboard number built on attendance is wrong.</footer>
+      </div>
+
+      <div class="ctrl">
+        <header>
+          <h3>DashboardController</h3>
+          <span class="state s-new">new · <b>needs M1–M3</b></span>
+        </header>
+        <div class="eps">
+          <div class="ep"><span class="verb v-get">GET</span><span class="path">/api/dashboard/summary?from=&amp;to=<em>The four tiles in one shaped payload. One endpoint, not four — parallel calls per tile is how dashboards get slow.</em></span><span class="who">Admin · Staff</span></div>
+          <div class="ep"><span class="verb v-get">GET</span><span class="path">/api/dashboard/today<em>The operational board: today's sessions with fill, check-in count, and flags for unstaffed or under-filled. The part staff open between classes.</em></span><span class="who">Admin · Staff</span></div>
+          <div class="ep"><span class="verb v-get">GET</span><span class="path">/api/dashboard/utilization?weeks=8<em>The day × hour heatmap. Cache 5 minutes — nobody needs last month's utilization live.</em></span><span class="who">Admin · Staff</span></div>
+          <div class="ep"><span class="verb v-get">GET</span><span class="path">/api/dashboard/at-risk<em>Named members: 4+ attendances last month, zero in 14 days. Returns a call list, not a count — the only panel here that produces an action.</em></span><span class="who">Admin · Staff</span></div>
+          <div class="ep"><span class="verb v-get">GET</span><span class="path">/api/dashboard/trainers<em>Attendance and fill rate by trainer. Genuinely useful and quietly political — keep it Admin-only until you've decided what it's for.</em></span><span class="who">Admin</span></div>
+        </div>
+        <footer>Trainers can have a narrowed version of <code class="i">/today</code> scoped to their own sessions. Filter by the token's user id inside the service, not by a query parameter a caller could change.</footer>
+      </div>
+
+      <div class="ctrl">
+        <header>
+          <h3>ClassesController · TrainersController · LookupsController</h3>
+          <span class="state s-edit">exist · <b>need hardening</b></span>
+        </header>
+        <div class="eps">
+          <div class="ep"><span class="verb v-get">GET</span><span class="path">/api/classes<em>Add paging — it returns the whole table today.</em></span><span class="who">any authenticated</span></div>
+          <div class="ep"><span class="verb v-post">POST</span><span class="path">/api/classes · PUT /{id}<em>Currently open to anyone. Lock to Admin, or Admin + Staff if staff manage the timetable.</em></span><span class="who">Admin</span></div>
+          <div class="ep"><span class="verb v-del">DEL</span><span class="path">/api/classes/{id} · /api/trainers/{id}<em>Switch to soft delete (M3). Every FK is Restrict, so these start throwing the moment the row has history — they work today only because the tables are nearly empty.</em></span><span class="who">Admin</span></div>
+          <div class="ep"><span class="verb v-get">GET</span><span class="path">/api/lookups?type=<em>Fine as is. Cache it — the values change about never.</em></span><span class="who">any authenticated</span></div>
+        </div>
+        <footer>Minor, worth knowing: <code class="i">GET /api/trainers/{id:int}</code> and <code class="i">GET /api/trainers/{name}</code> coexist only because of the <code class="i">:int</code> constraint. It works, but it's fragile — a third single-segment route will make the match order matter.</footer>
+      </div>
+
+      <div class="ctrl">
+        <header>
+          <h3>WaitlistController · MembershipsController</h3>
+          <span class="state s-later">later · <b>M4 · M5</b></span>
+        </header>
+        <div class="eps">
+          <div class="ep"><span class="verb v-post">POST</span><span class="path">/api/sessions/{id}/waitlist<em>Join a full session. Promotion happens server-side on cancellation, not by polling.</em></span><span class="who">any authenticated</span></div>
+          <div class="ep"><span class="verb v-get">GET</span><span class="path">/api/sessions/{id}/waitlist<em>Who's queued, in position order.</em></span><span class="who">Admin · Staff</span></div>
+          <div class="ep"><span class="verb v-get">GET</span><span class="path">/api/membership-plans<em>Public catalogue.</em></span><span class="who">any authenticated</span></div>
+          <div class="ep"><span class="verb v-post">POST</span><span class="path">/api/users/{id}/memberships<em>Assign a plan or pack to a member.</em></span><span class="who">Admin · Staff</span></div>
+          <div class="ep"><span class="verb v-get">GET</span><span class="path">/api/memberships/me<em>My remaining credits and expiry.</em></span><span class="who">any authenticated</span></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section>
+    <h2>Conventions worth fixing once</h2>
+    <p class="sub">Decisions that apply across every controller. Cheaper to settle before there are nine of them.</p>
+    <div class="cols2">
+      <div class="stack">
+        <h4>Authorization</h4>
+        <ul>
+          <li><b>Default-deny</b>A fallback policy requiring an authenticated user, with <code class="i">[AllowAnonymous]</code> on login and register only. Opting each endpoint in means the one you forget is the one that leaks.<code>Program.cs</code></li>
+          <li><b>Identity from claims, never the body</b>Especially on booking and cancellation. A userId in a request body is a request to act as someone else.</li>
+          <li><b>Ownership checks are not role checks</b>"Member" can cancel <em>their</em> booking. The role gets them to the endpoint; the row check decides the rest.</li>
+          <li><b>Trainer scoping in the service</b>Not via a query parameter the caller supplies.</li>
+        </ul>
+      </div>
+      <div class="stack">
+        <h4>Shape</h4>
+        <ul>
+          <li><b>Bulk over chatty</b>Attendance marks a roster; the dashboard returns one payload. Both are cases where the obvious per-item design is the wrong one.</li>
+          <li><b>Paged envelope on every list</b><code class="i">{ items, page, pageSize, total }</code>. Adding it later is a breaking change for every client.</li>
+          <li><b>Drop the "NotFound" string</b><code class="i">DeleteAsync</code> returning a magic string is spreading across services. <code class="i">AppException</code> plus the existing <code class="i">ProblemDetails</code> handler already does this properly.<code>Services/*.cs</code></li>
+          <li><b>409 for a full session</b>Not 400. The request was valid; the world changed.</li>
+          <li><b>Idempotency on booking</b>A double-tapped button shouldn't need the unique index to be the thing that saves you — though it will.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <footer class="src">
+    grounded in · Data/AppDbContext.cs · Domain/*.cs · Migrations/AppDbContextModelSnapshot.cs · Helpers/LookupNames.cs · Data/DatabaseSeeder.cs · Program.cs · Controllers/*.cs · Services/*.cs
+  </footer>
+</div>
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'base',
+    securityLevel: 'strict',
+    themeVariables: {
+      background: '#fbfcfc',
+      primaryColor: '#f2f6f5',
+      primaryBorderColor: '#0f6b5a',
+      primaryTextColor: '#14181a',
+      lineColor: '#6d7779',
+      fontFamily: '"IBM Plex Sans", ui-sans-serif, system-ui, sans-serif',
+      fontSize: '13px'
+    }
+  });
+</script>
+</body>
+</html>

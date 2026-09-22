@@ -4,5 +4,6 @@ public enum UserRole : byte
 {
     Admin = 1,
     Trainer = 2,
-    Member = 3
+    Member = 3,
+    Staff = 4
 }

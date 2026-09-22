@@ -1,4 +1,5 @@
 using FitBook_App.Domain;
+using FitBook_App.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace FitBook_App.Data;
@@ -66,6 +67,10 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Session>(entity =>
         {
             entity.ToTable("Sessions");
+            entity.Property(session => session.SeatsTaken).HasDefaultValue(0);
+            entity.Property(session => session.CheckedInCount).HasDefaultValue(0);
+            entity.HasIndex(session => session.StartAt);
+            entity.HasIndex(session => new { session.ClassId, session.StartAt });
             entity.HasOne(session => session.Class)
                 .WithMany(gymClass => gymClass.Sessions)
                 .HasForeignKey(session => session.ClassId)
@@ -80,6 +85,16 @@ public class AppDbContext : DbContext
         {
             entity.ToTable("Bookings");
             entity.HasIndex(booking => new { booking.SessionId, booking.UserId }).IsUnique();
+            entity.HasIndex(booking => new { booking.SessionId, booking.AttendanceStatus });
+            entity.HasIndex(booking => new { booking.UserId, booking.CreatedAt });
+            entity.Property(booking => booking.AttendanceStatus)
+                .HasConversion<byte>()
+                .HasDefaultValue(AttendanceStatus.Booked)
+                .HasSentinel((AttendanceStatus)0);
+            entity.Property(booking => booking.Source)
+                .HasConversion<byte>()
+                .HasDefaultValue(BookingSource.Online)
+                .HasSentinel((BookingSource)0);
             entity.HasOne(booking => booking.User)
                 .WithMany(user => user.Bookings)
                 .HasForeignKey(booking => booking.UserId)
@@ -91,6 +106,12 @@ public class AppDbContext : DbContext
             entity.HasOne(booking => booking.Status)
                 .WithMany()
                 .HasForeignKey(booking => booking.StatusId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Second relationship to Users: no inverse navigation, or EF cannot tell the two apart.
+            entity.HasOne(booking => booking.MarkedByUser)
+                .WithMany()
+                .HasForeignKey(booking => booking.MarkedByUserId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
     }
